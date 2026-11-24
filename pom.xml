@@ -44,11 +44,7 @@
             <artifactId>spring-ai-starter-mcp-server</artifactId>
         </dependency>
 
-        <!-- Plain SQL through JdbcTemplate; no JPA. -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
+        <!-- Plain JDBC on sqlite-jdbc (no JPA, no JdbcTemplate, no Spring DataSource auto-configuration). -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
@@ -69,6 +65,24 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- MCP tests (*IT.java) run after packaging, against target/cb-mcp.jar as real stdio server processes. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <cb.jar>${project.build.directory}/${project.build.finalName}.jar</cb.jar>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
