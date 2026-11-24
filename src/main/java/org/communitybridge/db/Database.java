@@ -32,6 +32,10 @@ public final class Database implements AutoCloseable {
 
     static final int BUSY_TIMEOUT_MS = 5000;
     private static final List<String> SCHEMA = SqlScript.load("/db/schema.sql");
+    private static final List<String> SEED = SqlScript.load("/db/seed.sql");
+    /** Deletion order that satisfies the foreign keys. */
+    private static final List<String> TABLES_CHILD_FIRST =
+            List.of("audit_events", "payments", "requests", "funds", "participants", "staff", "nonprofits");
 
     private final Path file;
     private final SQLiteDataSource dataSource;
@@ -73,7 +77,15 @@ public final class Database implements AutoCloseable {
      * Never deletes the file, so other open instances stay valid. Running it twice gives identical data.
      */
     public void reset() {
-        throw new UnsupportedOperationException("Implemented in step 4");
+        write(c -> {
+            try (Statement st = c.createStatement()) {
+                for (String table : TABLES_CHILD_FIRST) {
+                    st.executeUpdate("DELETE FROM " + table);
+                }
+            }
+            SqlScript.run(c, SEED);
+            return null;
+        });
     }
 
     /** Runs the work in one BEGIN IMMEDIATE transaction; commits if it returns, rolls back if it throws. */
