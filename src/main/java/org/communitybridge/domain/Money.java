@@ -1,13 +1,17 @@
 package org.communitybridge.domain;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.regex.Pattern;
+import org.communitybridge.service.error.FieldError;
+import org.communitybridge.service.error.ServiceException;
+
 /**
  * An exact USD amount as a whole number of cents (NFR-01). No floating point anywhere.
  *
  * <p>Limits: a request amount is 1 to {@link #MAX_REQUEST_CENTS}; a fund allocation is at most
  * {@link #MAX_FUND_CENTS}. These keep every total far below Long.MAX_VALUE.
  *
- * <p>Parsing and formatting are implemented in step 3 (service layer); until then they throw,
- * so the step 2 tests compile and fail.
  */
 public record Money(long cents) {
 
@@ -36,14 +40,39 @@ public record Money(long cents) {
      * Parses a request amount such as "300.50" into cents, by string parsing only.
      * Format must match {@link #AMOUNT_PATTERN}; value must be 1..{@link #MAX_REQUEST_CENTS} cents.
      *
-     * @throws org.communitybridge.service.error.ServiceException VALIDATION_ERROR on field "amount"
+     * @throws ServiceException VALIDATION_ERROR on field "amount"
      */
     public static Money parseRequestAmount(String amount) {
-        throw new UnsupportedOperationException("Implemented in step 3");
+        if (amount == null) {
+            throw invalid("is required");
+        }
+        // Java's \d matches ASCII digits only, and matches() must consume the whole string.
+        if (!AMOUNT.matcher(amount).matches()) {
+            throw invalid("must be a decimal string with at most 2 decimals, like \"300.50\" "
+                    + "(no sign, exponent, separators or leading zeros)");
+        }
+        long cents = new BigDecimal(amount).movePointRight(2).longValueExact();
+        if (cents < 1) {
+            throw invalid("must be more than 0");
+        }
+        if (cents > MAX_REQUEST_CENTS) {
+            throw invalid("must be at most 1000000.00");
+        }
+        return new Money(cents);
     }
 
     /** "300.50" style text for people; always two decimals, no grouping, no currency sign. */
     public String toPlainString() {
-        throw new UnsupportedOperationException("Implemented in step 3");
+        return format(cents);
+    }
+
+    public static String format(long cents) {
+        return BigDecimal.valueOf(cents, 2).toPlainString();
+    }
+
+    private static final Pattern AMOUNT = Pattern.compile(AMOUNT_PATTERN);
+
+    private static ServiceException invalid(String reason) {
+        return ServiceException.validation(List.of(new FieldError("amount", reason)));
     }
 }
