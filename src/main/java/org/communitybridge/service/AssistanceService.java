@@ -77,6 +77,14 @@ public class AssistanceService {
         this.identities = new StaffIdentityResolver(database);
     }
 
+    /**
+     * Identity, then role, without doing anything else. The MCP layer calls this first so that UNAUTHENTICATED and
+     * FORBIDDEN come before any JSON-shape VALIDATION_ERROR (spec check order). Each operation checks again itself.
+     */
+    public void checkAccess(String callerStaffId, Action action) {
+        authenticate(callerStaffId, action);
+    }
+
     // =================================================================== reads (any role)
 
     /** FR-11. */

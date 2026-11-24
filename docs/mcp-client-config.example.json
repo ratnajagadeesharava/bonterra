@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "community-bridge-priya-case-worker": {
+      "command": "java",
+      "args": ["--enable-native-access=ALL-UNNAMED", "-jar", "F:/bonterra/target/cb-mcp.jar"],
+      "env": { "CB_STAFF_ID": "stf_cb_case", "CB_DB_PATH": "F:/bonterra/data/cb.sqlite" }
+    },
+    "community-bridge-arjun-program-manager": {
+      "command": "java",
+      "args": ["--enable-native-access=ALL-UNNAMED", "-jar", "F:/bonterra/target/cb-mcp.jar"],
+      "env": { "CB_STAFF_ID": "stf_cb_pm", "CB_DB_PATH": "F:/bonterra/data/cb.sqlite" }
+    },
+    "community-bridge-neha-finance": {
+      "command": "java",
+      "args": ["--enable-native-access=ALL-UNNAMED", "-jar", "F:/bonterra/target/cb-mcp.jar"],
+      "env": { "CB_STAFF_ID": "stf_cb_fin", "CB_DB_PATH": "F:/bonterra/data/cb.sqlite" }
+    }
+  }
+}

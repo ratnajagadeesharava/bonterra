@@ -1,0 +1,262 @@
+# Community Bridge MCP demo
+server: java -jar cb-mcp.jar   database: demo.sqlite
+
+## 1. Discover tools (as Priya)
+11 tools: whoami, list_participants, get_participant, list_funds, get_funding_summary, create_request, approve_request, reject_request, record_payment, get_request, list_requests
+
+## 2. Who is who (each server process has its own launch identity)
+
+> Priya calls whoami { }
+< isError=false  You are Priya Sharma (CASE_WORKER) at Community Bridge.
+{
+  "staffId" : "stf_cb_case",
+  "name" : "Priya Sharma",
+  "role" : "CASE_WORKER",
+  "nonprofitId" : "np_cb",
+  "nonprofitName" : "Community Bridge"
+}
+
+> Arjun calls whoami { }
+< isError=false  You are Arjun Patel (PROGRAM_MANAGER) at Community Bridge.
+{
+  "staffId" : "stf_cb_pm",
+  "name" : "Arjun Patel",
+  "role" : "PROGRAM_MANAGER",
+  "nonprofitId" : "np_cb",
+  "nonprofitName" : "Community Bridge"
+}
+
+> Neha calls whoami { }
+< isError=false  You are Neha Gupta (FINANCE) at Community Bridge.
+{
+  "staffId" : "stf_cb_fin",
+  "name" : "Neha Gupta",
+  "role" : "FINANCE",
+  "nonprofitId" : "np_cb",
+  "nonprofitName" : "Community Bridge"
+}
+
+## 3. Funding before (as Priya)
+
+> Priya calls get_funding_summary {
+  "fundId" : "fnd_cb_housing"
+}
+< isError=false  Housing Stability: 10000.00 allocated, 0.00 committed, 0.00 paid, 10000.00 available USD.
+{
+  "funds" : [ {
+    "id" : "fnd_cb_housing",
+    "name" : "Housing Stability",
+    "status" : "ACTIVE",
+    "currency" : "USD",
+    "allocationCents" : 1000000,
+    "committedCents" : 0,
+    "paidCents" : 0,
+    "availableCents" : 1000000,
+    "pendingCents" : 0,
+    "pendingCount" : 0,
+    "allocation" : "10000.00",
+    "committed" : "0.00",
+    "paid" : "0.00",
+    "available" : "10000.00",
+    "pending" : "0.00"
+  } ],
+  "totals" : {
+    "currency" : "USD",
+    "allocationCents" : 1000000,
+    "committedCents" : 0,
+    "paidCents" : 0,
+    "availableCents" : 1000000,
+    "pendingCents" : 0,
+    "allocation" : "10000.00",
+    "committed" : "0.00",
+    "paid" : "0.00",
+    "available" : "10000.00",
+    "pending" : "0.00"
+  }
+}
+
+## 4. Priya (case worker) submits a $300.00 rent request for Kavya
+
+> Priya calls create_request {
+  "participantId" : "par_cb_001",
+  "fundId" : "fnd_cb_housing",
+  "category" : "RENT",
+  "purpose" : "March rent shortfall",
+  "amount" : "300.00",
+  "clientRequestId" : "demo-kavya-march-rent"
+}
+< isError=false  Request req_a15001c9416bd41a2308 is PENDING for 300.00 USD; no money reserved (APPLIED).
+{
+  "outcome" : "APPLIED",
+  "request" : {
+    "id" : "req_a15001c9416bd41a2308",
+    "participantId" : "par_cb_001",
+    "fundId" : "fnd_cb_housing",
+    "category" : "RENT",
+    "purpose" : "March rent shortfall",
+    "amountCents" : 30000,
+    "amount" : "300.00",
+    "currency" : "USD",
+    "status" : "PENDING",
+    "clientRequestId" : "demo-kavya-march-rent",
+    "createdBy" : "stf_cb_case",
+    "createdAt" : "2026-11-24T13:04:31Z",
+    "decidedBy" : null,
+    "decidedAt" : null,
+    "rejectionReason" : null
+  }
+}
+
+## 5. Arjun (program manager) approves it: $300.00 is reserved
+
+> Arjun calls approve_request {
+  "requestId" : "req_a15001c9416bd41a2308"
+}
+< isError=false  Request req_a15001c9416bd41a2308 is APPROVED; Housing Stability: 10000.00 allocated, 300.00 committed, 0.00 paid, 9700.00 available USD. (APPLIED)
+{
+  "outcome" : "APPLIED",
+  "request" : {
+    "id" : "req_a15001c9416bd41a2308",
+    "participantId" : "par_cb_001",
+    "fundId" : "fnd_cb_housing",
+    "category" : "RENT",
+    "purpose" : "March rent shortfall",
+    "amountCents" : 30000,
+    "amount" : "300.00",
+    "currency" : "USD",
+    "status" : "APPROVED",
+    "clientRequestId" : "demo-kavya-march-rent",
+    "createdBy" : "stf_cb_case",
+    "createdAt" : "2026-11-24T13:04:31Z",
+    "decidedBy" : "stf_cb_pm",
+    "decidedAt" : "2026-11-24T13:04:31Z",
+    "rejectionReason" : null
+  },
+  "fund" : {
+    "id" : "fnd_cb_housing",
+    "name" : "Housing Stability",
+    "status" : "ACTIVE",
+    "currency" : "USD",
+    "allocationCents" : 1000000,
+    "committedCents" : 30000,
+    "paidCents" : 0,
+    "availableCents" : 970000,
+    "pendingCents" : 0,
+    "pendingCount" : 0,
+    "allocation" : "10000.00",
+    "committed" : "300.00",
+    "paid" : "0.00",
+    "available" : "9700.00",
+    "pending" : "0.00"
+  }
+}
+
+## 6. Neha (finance) records the payment: committed moves to paid
+
+> Neha calls record_payment {
+  "requestId" : "req_a15001c9416bd41a2308"
+}
+< isError=false  Payment pay_4249af6644bb00efc76e of 300.00 USD recorded for request req_a15001c9416bd41a2308; Housing Stability: 10000.00 allocated, 0.00 committed, 300.00 paid, 9700.00 available USD. (APPLIED)
+{
+  "outcome" : "APPLIED",
+  "payment" : {
+    "id" : "pay_4249af6644bb00efc76e",
+    "requestId" : "req_a15001c9416bd41a2308",
+    "amountCents" : 30000,
+    "amount" : "300.00",
+    "currency" : "USD",
+    "recordedBy" : "stf_cb_fin",
+    "recordedAt" : "2026-11-24T13:04:31Z"
+  },
+  "request" : {
+    "id" : "req_a15001c9416bd41a2308",
+    "participantId" : "par_cb_001",
+    "fundId" : "fnd_cb_housing",
+    "category" : "RENT",
+    "purpose" : "March rent shortfall",
+    "amountCents" : 30000,
+    "amount" : "300.00",
+    "currency" : "USD",
+    "status" : "PAID",
+    "clientRequestId" : "demo-kavya-march-rent",
+    "createdBy" : "stf_cb_case",
+    "createdAt" : "2026-11-24T13:04:31Z",
+    "decidedBy" : "stf_cb_pm",
+    "decidedAt" : "2026-11-24T13:04:31Z",
+    "rejectionReason" : null
+  },
+  "fund" : {
+    "id" : "fnd_cb_housing",
+    "name" : "Housing Stability",
+    "status" : "ACTIVE",
+    "currency" : "USD",
+    "allocationCents" : 1000000,
+    "committedCents" : 0,
+    "paidCents" : 30000,
+    "availableCents" : 970000,
+    "pendingCents" : 0,
+    "pendingCount" : 0,
+    "allocation" : "10000.00",
+    "committed" : "0.00",
+    "paid" : "300.00",
+    "available" : "9700.00",
+    "pending" : "0.00"
+  }
+}
+
+## 7. Final funding summary (as Priya)
+
+> Priya calls get_funding_summary {
+  "fundId" : "fnd_cb_housing"
+}
+< isError=false  Housing Stability: 10000.00 allocated, 0.00 committed, 300.00 paid, 9700.00 available USD.
+{
+  "funds" : [ {
+    "id" : "fnd_cb_housing",
+    "name" : "Housing Stability",
+    "status" : "ACTIVE",
+    "currency" : "USD",
+    "allocationCents" : 1000000,
+    "committedCents" : 0,
+    "paidCents" : 30000,
+    "availableCents" : 970000,
+    "pendingCents" : 0,
+    "pendingCount" : 0,
+    "allocation" : "10000.00",
+    "committed" : "0.00",
+    "paid" : "300.00",
+    "available" : "9700.00",
+    "pending" : "0.00"
+  } ],
+  "totals" : {
+    "currency" : "USD",
+    "allocationCents" : 1000000,
+    "committedCents" : 0,
+    "paidCents" : 30000,
+    "availableCents" : 970000,
+    "pendingCents" : 0,
+    "allocation" : "10000.00",
+    "committed" : "0.00",
+    "paid" : "300.00",
+    "available" : "9700.00",
+    "pending" : "0.00"
+  }
+}
+
+Result: committed 0.00, paid 300.00, available 9700.00 USD
+
+## 8. A wrong role is refused (Priya tries to approve)
+
+> Priya calls approve_request {
+  "requestId" : "req_a15001c9416bd41a2308"
+}
+< isError=true  FORBIDDEN: This action requires role PROGRAM_MANAGER
+{
+  "error" : {
+    "code" : "FORBIDDEN",
+    "message" : "This action requires role PROGRAM_MANAGER",
+    "details" : {
+      "requiredRole" : "PROGRAM_MANAGER"
+    }
+  }
+}

@@ -66,15 +66,15 @@ class M05EndToEndIT extends McpTestBase {
     @Test
     @DisplayName("AC-22 · driving the server with raw JSON-RPC on stdin: every stdout line is a JSON-RPC 2.0 message answering ids 1-3; logs go to stderr; exit 0 when stdin closes")
     void stdoutIsOnlyJsonRpc() throws Exception {
-        String stdin = String.join("\n",
+        List<String> requests = List.of(
                 "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-11-25\","
                         + "\"capabilities\":{},\"clientInfo\":{\"name\":\"probe\",\"version\":\"1\"}}}",
                 "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}",
                 "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}",
-                "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"whoami\",\"arguments\":{}}}",
-                "");
+                "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"whoami\",\"arguments\":{}}}");
 
-        ProcessRun run = runProcess(Map.of("CB_STAFF_ID", PRIYA, "CB_DB_PATH", dbFile.toString()), stdin, 60);
+        ProcessRun run = converse(Map.of("CB_STAFF_ID", PRIYA, "CB_DB_PATH", dbFile.toString()), requests,
+                java.util.Set.of(1, 2, 3), 60);
 
         JsonMapper json = JsonMapper.builder().build();
         List<Integer> ids = new ArrayList<>();

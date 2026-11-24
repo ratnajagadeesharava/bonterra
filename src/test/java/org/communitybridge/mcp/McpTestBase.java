@@ -268,6 +268,57 @@ abstract class McpTestBase {
     record ProcessRun(int exitCode, List<String> stdout, List<String> stderr) {
     }
 
+    /**
+     * Like a real client: writes the request lines, keeps stdin open until a response for every awaited id has
+     * appeared on stdout (or the timeout passes), then closes stdin and waits for the process to exit.
+     * (Closing stdin straight away makes the SDK shut down before in-flight tool calls are answered.)
+     */
+    static ProcessRun converse(Map<String, String> env, List<String> requestLines, java.util.Set<Integer> awaitIds,
+            int timeoutSeconds) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(serverCommand());
+        pb.environment().remove("CB_STAFF_ID");
+        pb.environment().remove("CB_DB_PATH");
+        pb.environment().putAll(env);
+        Path err = Files.createTempFile(dir, "err", ".txt");
+        pb.redirectError(err.toFile());
+        Process p = pb.start();
+
+        List<String> stdout = java.util.Collections.synchronizedList(new ArrayList<>());
+        Thread reader = new Thread(() -> {
+            try (var r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(),
+                    java.nio.charset.StandardCharsets.UTF_8))) {
+                for (String line; (line = r.readLine()) != null; ) {
+                    stdout.add(line);
+                }
+            } catch (IOException ignored) {
+                // process ended
+            }
+        });
+        reader.start();
+
+        var stdin = new java.io.PrintStream(p.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
+        for (String line : requestLines) {
+            stdin.println(line);
+        }
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+        while (System.nanoTime() < deadline && !awaitIds.stream().allMatch(id -> answered(stdout, id))) {
+            Thread.sleep(100);
+        }
+        stdin.close();
+        if (!p.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+            p.destroyForcibly();
+            throw new AssertionError("Server process did not exit after stdin closed");
+        }
+        reader.join(5000);
+        return new ProcessRun(p.exitValue(), List.copyOf(stdout), Files.readAllLines(err));
+    }
+
+    private static boolean answered(List<String> stdout, int id) {
+        synchronized (stdout) {
+            return stdout.stream().anyMatch(l -> l.contains("\"id\":" + id + ","));
+        }
+    }
+
     static ProcessRun runProcess(Map<String, String> env, String stdin, int timeoutSeconds, String... extraArgs)
             throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(serverCommand(extraArgs));
