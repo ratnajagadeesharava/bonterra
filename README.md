@@ -142,10 +142,7 @@ client and keep stdin open until answered; the server was not changed just to pa
 counted 241 cases where Surefire ran 307 (fixed after cross-checking the counts); and the guard-removal run above
 confirmed the race test can fail.
 
-## Time, limitations and next steps
 
-**Actual time spent:** _to be filled in by the candidate_ (the agent cannot measure active human time). The
-commit history gives each step's timestamps: `git log --format="%ad %s" --date=iso`.
 
 **Known limitations**
 
