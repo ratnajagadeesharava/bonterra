@@ -59,6 +59,27 @@ open until all answers arrive (spec v1.7); the server was not changed. Re-run of
 Clean run: `.\mvnw.cmd clean verify` → business `Tests run: 307, Failures: 0, Errors: 0, Skipped: 0`;
 MCP `Tests run: 71, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS` in about 1 minute.
 
+## 2026-11-24 · Linux fresh clone (Debian 13, WSL2, OpenJDK 21.0.12)
+
+`git clone` of the committed repository onto the Linux filesystem, with no Maven cache (`~/.m2` absent), so the
+wrapper downloaded Maven and every dependency. File modes `-rwxr-xr-x` on `mvnw` and `scripts/*.sh`; no CR
+characters in any of them.
+
+```
+./scripts/test.sh      exit 0
+  Business tests   307 cases,  307 passed, 0 failed, 0 errors, 0 skipped
+  MCP tests         71 cases,   71 passed, 0 failed, 0 errors, 0 skipped
+./scripts/reset-db.sh  exit 0
+SETUP.md smoke test    exit 0, 2 stdout lines, whoami -> "Priya Sharma"
+run-server.sh stf_nobody   exit 2, 0 bytes on stdout, reason on stderr
+./scripts/mcp-config.sh    valid JSON (python3 -m json.tool); --vscode gives "servers" with type stdio
+./scripts/demo.sh      exit 0; 11 tools; committed 0.00, paid 300.00, available 9700.00; FORBIDDEN for Priya
+./scripts/claude-code-add.sh without claude on PATH   exit 1, "claude (Claude Code CLI) not found on PATH."
+```
+
+`inspector.sh` was not run on Linux (no Node.js in that distro); it was exercised on Windows with the same
+command line.
+
 Demo: `.\scripts\demo.ps1` exit 0. It discovered 11 tools; Priya created a $300.00 request, Arjun approved it,
 Neha paid it, and the final summary showed committed 0.00, paid 300.00, available 9700.00 USD. Priya's
 approve attempt returned `FORBIDDEN`. Full output: [demo-output.txt](demo-output.txt).

@@ -6,6 +6,7 @@ and finance staff record simulated payments against fixed grant funds. Built wit
 
 | Document | What it holds |
 |---|---|
+| [SETUP.md](SETUP.md) | Step-by-step setup and run guide (Linux and Windows): prerequisites, tests, database, demo, running the server, connecting MCP Inspector, Claude Code, Claude Desktop and other clients, troubleshooting |
 | [docs/SPEC.md](docs/SPEC.md) | The specification: requirements, business rules, data model, MCP interface, permissions, acceptance criteria, production security, traceability with results, and a revision log of every change since v1 |
 | [docs/spec-v1.docx](docs/spec-v1.docx) | The initial specification, unchanged, saved before any code |
 | [docs/TEST-CASES.md](docs/TEST-CASES.md) | Every test by description, in flow order, with its last result (generated from the code) |
@@ -14,26 +15,21 @@ and finance staff record simulated payments against fixed grant funds. Built wit
 
 ## Setup, run and test
 
-Requirements: a JDK 21 or newer on `PATH`. Maven is downloaded by the wrapper (pinned to 3.9.16). Every
-dependency version is pinned in [pom.xml](pom.xml) through the Spring Boot and Spring AI BOMs.
-Commands are for Windows PowerShell from the repository root; on macOS/Linux use `./mvnw` and the `.sh` scripts.
+Requirements: a JDK 21 or newer. Maven is downloaded by the wrapper (pinned to 3.9.16), and every dependency
+version is pinned in [pom.xml](pom.xml) through the Spring Boot and Spring AI BOMs. The full guide, including
+Windows commands and troubleshooting, is [SETUP.md](SETUP.md). On Linux or macOS, from the repository root:
 
-```powershell
-.\mvnw.cmd clean verify              # build + 307 business test cases + 71 MCP test cases (about 1 minute)
-.\mvnw.cmd test                      # business tests only (service level, about 30 s)
-.\scripts\reset-db.ps1               # create or reset data/cb.sqlite with the seed (separate from startup)
-.\scripts\demo.ps1                   # MCP client demo: discover, create, approve, pay, summary
+```bash
+./scripts/test.sh                    # clean build + 307 business cases + 71 MCP cases, with a summary
+./scripts/reset-db.sh                # create or reset data/cb.sqlite with the seed (separate from startup)
+./scripts/demo.sh                    # MCP client demo: discover, create, approve, pay, summary
+./scripts/run-server.sh stf_cb_case  # run the stdio server as Priya (normally an MCP client launches it)
+./scripts/inspector.sh stf_cb_case   # MCP Inspector in the browser (needs Node.js)
+./scripts/mcp-config.sh              # client config (Claude Desktop, Cursor, ...) with this machine's paths
+./scripts/claude-code-add.sh         # register Priya, Arjun and Neha with Claude Code
 ```
 
-Run the server yourself (one process per staff identity):
-
-```powershell
-$env:CB_STAFF_ID = "stf_cb_case"; $env:CB_DB_PATH = "data/cb.sqlite"
-java --enable-native-access=ALL-UNNAMED -jar target/cb-mcp.jar
-```
-
-To use it from an MCP client such as Claude Desktop, copy [docs/mcp-client-config.example.json](docs/mcp-client-config.example.json)
-(three servers on one database: Priya, Arjun, Neha) and adjust the paths.
+On Windows PowerShell: `.\mvnw.cmd clean verify`, `.\scripts\reset-db.ps1`, `.\scripts\demo.ps1`.
 
 **Fixture identities** (seeded by the reset command; full data in [seed.sql](src/main/resources/db/seed.sql)):
 
@@ -106,8 +102,9 @@ starts with the requirement or acceptance-criterion ID it proves.
 Failure cases also assert that every row of every table is unchanged. The MCP client validates each successful
 result against the tool's output schema, so a passing MCP test also proves its output matched the schema.
 
-**Not run:** the build has not been tried on a second machine or on an actual JDK 21. It ran on JDK 25 with
-`--release 21`.
+**Platforms:** Windows 11 with JDK 25 (`--release 21`), and a fresh clone on Debian 13 (WSL2) with OpenJDK
+21.0.12 and an empty Maven cache, where `./scripts/test.sh`, `reset-db.sh`, `run-server.sh`, `mcp-config.sh` and
+`demo.sh` all ran green. Not tried on macOS.
 
 ## How I worked, and how AI was used
 
